@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
- * USA 
+ * USA
  */
 
 #include <stdlib.h>
@@ -87,12 +87,12 @@ const char *flow_str[] = {
 #define KEY_TOGGLE  CKEY('t') /* toggle DTR */
 #define KEY_BAUD    CKEY('b') /* set baudrate */
 #define KEY_BAUD_UP CKEY('u') /* increase baudrate (up) */
-#define KEY_BAUD_DN CKEY('d') /* decrase baudrate (down) */ 
-#define KEY_FLOW    CKEY('f') /* change flowcntrl mode */ 
-#define KEY_PARITY  CKEY('y') /* change parity mode */ 
-#define KEY_BITS    CKEY('i') /* change number of databits */ 
-#define KEY_STOP    CKEY('j') /* change number of stopbits */ 
-#define KEY_LECHO   CKEY('c') /* toggle local echo */ 
+#define KEY_BAUD_DN CKEY('d') /* decrase baudrate (down) */
+#define KEY_FLOW    CKEY('f') /* change flowcntrl mode */
+#define KEY_PARITY  CKEY('y') /* change parity mode */
+#define KEY_BITS    CKEY('i') /* change number of databits */
+#define KEY_STOP    CKEY('j') /* change number of stopbits */
+#define KEY_LECHO   CKEY('c') /* toggle local echo */
 #define KEY_STATUS  CKEY('v') /* show program options */
 #define KEY_HELP    CKEY('h') /* show help (same as [C-k]) */
 #define KEY_KEYS    CKEY('k') /* show available command keys */
@@ -132,7 +132,7 @@ struct map_names_s {
 	{ "delbs", M_DELBS },
 	{ "bsdel", M_BSDEL },
 	/* Sentinel */
-	{ NULL, 0 } 
+	{ NULL, 0 }
 };
 
 int
@@ -180,6 +180,7 @@ struct {
 	int lecho;
 	int noinit;
 	int noreset;
+	int noninteractive;
 #if defined (UUCP_LOCK_DIR) || defined (USE_FLOCK)
 	int nolock;
 #endif
@@ -199,6 +200,7 @@ struct {
 	.lecho = 0,
 	.noinit = 0,
 	.noreset = 0,
+	.noninteractive = 0,
 #if defined (UUCP_LOCK_DIR) || defined (USE_FLOCK)
 	.nolock = 0,
 #endif
@@ -284,12 +286,12 @@ uucp_lock(void)
 
 	fd = open(lockname, O_RDONLY);
 	if ( fd >= 0 ) {
-		r = read(fd, buf, sizeof(buf)); 
+		r = read(fd, buf, sizeof(buf));
 		close(fd);
 		/* if r == 4, lock file is binary (old-style) */
 		pid = (r == 4) ? *(int *)buf : strtol(buf, NULL, 10);
-		if ( pid > 0 
-			 && kill((pid_t)pid, 0) < 0 
+		if ( pid > 0
+			 && kill((pid_t)pid, 0) < 0
 			 && errno == ESRCH ) {
 			/* stale lock file */
 			printf("Removing stale lock: %s\n", lockname);
@@ -333,12 +335,12 @@ fatal (const char *format, ...)
 
 	term_reset(STO);
 	term_reset(STI);
-	
+
 	va_start(args, format);
 	len = vsnprintf(buf, sizeof(buf), format, args);
 	buf[sizeof(buf) - 1] = '\0';
 	va_end(args);
-	
+
 	s = "\r\nFATAL: ";
 	writen_ni(STO, s, strlen(s));
 	writen_ni(STO, buf, len);
@@ -351,7 +353,7 @@ fatal (const char *format, ...)
 #ifdef UUCP_LOCK_DIR
 	uucp_unlock();
 #endif
-	
+
 	exit(EXIT_FAILURE);
 }
 
@@ -368,7 +370,7 @@ read_filename (void)
 	fd_printf(STO, "\r\n*** file: ");
 	r = fd_readline(STI, STO, fname, sizeof(fname));
 	fd_printf(STO, "\r\n");
-	if ( r < 0 ) 
+	if ( r < 0 )
 		return NULL;
 	else
 		return strdup(fname);
@@ -398,8 +400,8 @@ read_baud (void)
 
 #else /* LINENOISE defined */
 
-void 
-file_completion_cb (const char *buf, linenoiseCompletions *lc) 
+void
+file_completion_cb (const char *buf, linenoiseCompletions *lc)
 {
 	DIR *dirp;
 	struct dirent *dp;
@@ -443,14 +445,14 @@ file_completion_cb (const char *buf, linenoiseCompletions *lc)
 
 static char *history_file_path = NULL;
 
-void 
+void
 init_history (void)
 {
 	char *home_directory;
 
 	home_directory = getenv("HOME");
 	if (home_directory) {
-		history_file_path = malloc(strlen(home_directory) + 2 + 
+		history_file_path = malloc(strlen(home_directory) + 2 +
 								   strlen(HISTFILE));
 		strcpy(history_file_path, home_directory);
 		if (home_directory[strlen(home_directory)-1] != '/') {
@@ -461,14 +463,14 @@ init_history (void)
 	}
 }
 
-void 
+void
 cleanup_history (void)
 {
 	if (history_file_path)
 		free(history_file_path);
 }
 
-void 
+void
 add_history (char *fname)
 {
 	linenoiseHistoryAdd(fname);
@@ -578,16 +580,16 @@ do_map (char *b, int map, char c)
 	return n;
 }
 
-void 
+void
 map_and_write (int fd, int map, char c)
 {
 	char b[M_MAXMAP];
 	int n;
-		
+
 	n = do_map(b, map, c);
 	if ( n )
 		if ( writen_ni(fd, b, n) < n )
-			fatal("write to stdout failed: %s", strerror(errno));		
+			fatal("write to stdout failed: %s", strerror(errno));
 }
 
 /**********************************************************************/
@@ -669,7 +671,7 @@ stopbits_next (int bits)
 }
 
 void
-show_status (int dtr_up) 
+show_status (int dtr_up)
 {
 	int baud, bits, stopbits, mctl;
 	enum flowcntrl_e flow;
@@ -682,22 +684,22 @@ show_status (int dtr_up)
 	parity = term_get_parity(tty_fd);
 	bits = term_get_databits(tty_fd);
 	stopbits = term_get_stopbits(tty_fd);
-	
+
 	fd_printf(STO, "\r\n");
- 
+
 	if ( baud != opts.baud ) {
 		fd_printf(STO, "*** baud: %d (%d)\r\n", opts.baud, baud);
-	} else { 
+	} else {
 		fd_printf(STO, "*** baud: %d\r\n", opts.baud);
 	}
 	if ( flow != opts.flow ) {
-		fd_printf(STO, "*** flow: %s (%s)\r\n", 
+		fd_printf(STO, "*** flow: %s (%s)\r\n",
 				  flow_str[opts.flow], flow_str[flow]);
 	} else {
 		fd_printf(STO, "*** flow: %s\r\n", flow_str[opts.flow]);
 	}
 	if ( parity != opts.parity ) {
-		fd_printf(STO, "*** parity: %s (%s)\r\n", 
+		fd_printf(STO, "*** parity: %s (%s)\r\n",
 				  parity_str[opts.parity], parity_str[parity]);
 	} else {
 		fd_printf(STO, "*** parity: %s\r\n", parity_str[opts.parity]);
@@ -715,10 +717,10 @@ show_status (int dtr_up)
 
 	mctl = term_get_mctl(tty_fd);
 	if (mctl >= 0 && mctl != MCTL_UNAVAIL) {
-		if ( ((mctl & MCTL_DTR) ? 1 : 0) == dtr_up )  
+		if ( ((mctl & MCTL_DTR) ? 1 : 0) == dtr_up )
 			fd_printf(STO, "*** dtr: %s\r\n", dtr_up ? "up" : "down");
 		else
-			fd_printf(STO, "*** dtr: %s (%s)\r\n", 
+			fd_printf(STO, "*** dtr: %s (%s)\r\n",
 					  dtr_up ? "up" : "down",
 					  (mctl & MCTL_DTR) ? "up" : "down");
 		fd_printf(STO, "*** mctl: ");
@@ -742,13 +744,13 @@ show_keys()
 	fd_printf(STO, "*** Picocom commands (all prefixed by [C-%c])\r\n",
 			  KEYC(opts.escape));
 	fd_printf(STO, "\r\n");
-	fd_printf(STO, "*** [C-%c] : Exit picocom\r\n", 
+	fd_printf(STO, "*** [C-%c] : Exit picocom\r\n",
 			  KEYC(KEY_EXIT));
-	fd_printf(STO, "*** [C-%c] : Exit without reseting serial port\r\n", 
+	fd_printf(STO, "*** [C-%c] : Exit without reseting serial port\r\n",
 			  KEYC(KEY_QUIT));
-	fd_printf(STO, "*** [C-%c] : Set baudrate\r\n", 
+	fd_printf(STO, "*** [C-%c] : Set baudrate\r\n",
 			  KEYC(KEY_BAUD));
-	fd_printf(STO, "*** [C-%c] : Increase baudrate (baud-up)\r\n", 
+	fd_printf(STO, "*** [C-%c] : Increase baudrate (baud-up)\r\n",
 			  KEYC(KEY_BAUD_UP));
 	fd_printf(STO, "*** [C-%c] : Decrease baudrate (baud-down)\r\n",
 			  KEYC(KEY_BAUD_DN));;
@@ -796,7 +798,7 @@ establish_child_signal_handlers (void)
 	dfl_action.sa_handler = SIG_DFL;
 	sigemptyset (&dfl_action.sa_mask);
 	dfl_action.sa_flags = 0;
-	
+
 	sigaction (SIGINT, &dfl_action, NULL);
 	sigaction (SIGTERM, &dfl_action, NULL);
 }
@@ -830,12 +832,12 @@ run_cmd(int fd, const char *cmd, const char *args_extra)
 		/* reset terminal (back to raw mode) */
 		term_apply(STI, 0);
 		/* check and report child return status */
-		if ( WIFEXITED(status) ) { 
-			fd_printf(STO, "\r\n*** exit status: %d ***\r\n", 
+		if ( WIFEXITED(status) ) {
+			fd_printf(STO, "\r\n*** exit status: %d ***\r\n",
 					  WEXITSTATUS(status));
 			return WEXITSTATUS(status);
 		} else if ( WIFSIGNALED(status) ) {
-			fd_printf(STO, "\r\n*** killed by signal: %d ***\r\n", 
+			fd_printf(STO, "\r\n*** killed by signal: %d ***\r\n",
 					  WTERMSIG(status));
 			return -1;
 		} else {
@@ -848,13 +850,13 @@ run_cmd(int fd, const char *cmd, const char *args_extra)
 		int argc;
 		char *argv[RUNCMD_ARGS_MAX + 1];
 		int r;
-			
+
 		/* unmanage terminal, and reset it to canonical mode */
 		term_remove(STI);
 		/* unmanage serial port fd, without reset */
 		term_erase(fd);
 		/* set serial port fd to blocking mode */
-		fl = fcntl(fd, F_GETFL); 
+		fl = fcntl(fd, F_GETFL);
 		fl &= ~O_NONBLOCK;
 		fcntl(fd, F_SETFL, fl);
 		/* connect stdin and stdout to serial port */
@@ -862,7 +864,7 @@ run_cmd(int fd, const char *cmd, const char *args_extra)
 		close(STO);
 		dup2(fd, STI);
 		dup2(fd, STO);
-		
+
 		/* build command arguments vector */
 		argc = 0;
 		r = split_quoted(cmd, &argc, argv, RUNCMD_ARGS_MAX);
@@ -878,9 +880,9 @@ run_cmd(int fd, const char *cmd, const char *args_extra)
 		if ( argc < 1 ) {
 			fd_printf(STDERR_FILENO, "No command given\n");
 			exit(RUNCMD_EXEC_FAIL);
-		}	
+		}
 		argv[argc] = NULL;
-			
+
 		/* run extenral command */
 		fd_printf(STDERR_FILENO, "$ %s %s\n", cmd, args_extra);
 		establish_child_signal_handlers();
@@ -932,7 +934,7 @@ do_command (unsigned char c)
 		else
 			r = term_raise_dtr(tty_fd);
 		if ( r >= 0 ) dtr_up = ! dtr_up;
-		fd_printf(STO, "\r\n*** DTR: %s ***\r\n", 
+		fd_printf(STO, "\r\n*** DTR: %s ***\r\n",
 				  dtr_up ? "up" : "down");
 		break;
 	case KEY_BAUD:
@@ -955,7 +957,7 @@ do_command (unsigned char c)
 		term_apply(tty_fd, 1);
 		newbaud = term_get_baudrate(tty_fd, NULL);
 		if ( opts.baud != newbaud ) {
-			fd_printf(STO, "\r\n*** baud: %d (%d) ***\r\n", 
+			fd_printf(STO, "\r\n*** baud: %d (%d) ***\r\n",
 					  opts.baud, newbaud);
 		} else {
 			fd_printf(STO, "\r\n*** baud: %d ***\r\n", opts.baud);
@@ -969,10 +971,10 @@ do_command (unsigned char c)
 		term_apply(tty_fd, 1);
 		newflow = term_get_flowcntrl(tty_fd);
 		if ( opts.flow != newflow ) {
-			fd_printf(STO, "\r\n*** flow: %s (%s) ***\r\n", 
+			fd_printf(STO, "\r\n*** flow: %s (%s) ***\r\n",
 					  flow_str[opts.flow], flow_str[newflow]);
 		} else {
-			fd_printf(STO, "\r\n*** flow: %s ***\r\n", 
+			fd_printf(STO, "\r\n*** flow: %s ***\r\n",
 					  flow_str[opts.flow]);
 		}
 		break;
@@ -984,10 +986,10 @@ do_command (unsigned char c)
 		newparity = term_get_parity(tty_fd);
 		if (opts.parity != newparity ) {
 			fd_printf(STO, "\r\n*** parity: %s (%s) ***\r\n",
-					  parity_str[opts.parity], 
+					  parity_str[opts.parity],
 					  parity_str[newparity]);
 		} else {
-			fd_printf(STO, "\r\n*** parity: %s ***\r\n", 
+			fd_printf(STO, "\r\n*** parity: %s ***\r\n",
 					  parity_str[opts.parity]);
 		}
 		break;
@@ -1001,7 +1003,7 @@ do_command (unsigned char c)
 			fd_printf(STO, "\r\n*** databits: %d (%d) ***\r\n",
 					  opts.databits, newbits);
 		} else {
-			fd_printf(STO, "\r\n*** databits: %d ***\r\n", 
+			fd_printf(STO, "\r\n*** databits: %d ***\r\n",
 					  opts.databits);
 		}
 		break;
@@ -1015,13 +1017,13 @@ do_command (unsigned char c)
 			fd_printf(STO, "\r\n*** stopbits: %d (%d) ***\r\n",
 					  opts.stopbits, newstopbits);
 		} else {
-			fd_printf(STO, "\r\n*** stopbits: %d ***\r\n", 
+			fd_printf(STO, "\r\n*** stopbits: %d ***\r\n",
 					  opts.stopbits);
 		}
 		break;
 	case KEY_LECHO:
 		opts.lecho = ! opts.lecho;
-		fd_printf(STO, "\r\n*** local echo: %s ***\r\n", 
+		fd_printf(STO, "\r\n*** local echo: %s ***\r\n",
 				  opts.lecho ? "yes" : "no");
 		break;
 	case KEY_SEND:
@@ -1031,7 +1033,13 @@ do_command (unsigned char c)
 			fd_printf(STO, "\r\n*** command disabled ***\r\n");
 			break;
 		}
-		fname = read_filename();
+		if(opts.noninteractive == 1){
+			fname="\n";
+			run_cmd(tty_fd, xfr_cmd, fname);
+			exit(EXIT_SUCCESS);
+		} else {
+			fname = read_filename();
+		}
 		if (fname == NULL) {
 			fd_printf(STO, "*** cannot read filename ***\r\n");
 			break;
@@ -1060,7 +1068,7 @@ loop(void)
 		ST_TRANSPARENT
 	} state;
 	fd_set rdset, wrset;
-	int r, n;
+	int r, n, x = 1;
 	unsigned char c;
 
 	tty_q.len = 0;
@@ -1072,6 +1080,7 @@ loop(void)
 		FD_SET(STI, &rdset);
 		FD_SET(tty_fd, &rdset);
 		if ( tty_q.len ) FD_SET(tty_fd, &wrset);
+
 
 		r = select(tty_fd + 1, &rdset, &wrset, NULL, NULL);
 		if ( r < 0 )  {
@@ -1087,12 +1096,12 @@ loop(void)
 
 			do {
 				n = read(STI, &c, 1);
-			} while (n < 0 && errno == EINTR);
+			} while (n < 0 && errno == EINTR || opts.noninteractive == 1);
 			if (n == 0) {
 				fatal("stdin closed");
 			} else if (n < 0) {
 				/* is this really necessary? better safe than sory! */
-				if ( errno != EAGAIN && errno != EWOULDBLOCK ) 
+				if ( errno != EAGAIN && errno != EWOULDBLOCK )
 					fatal("read from stdin failed: %s", strerror(errno));
 				else
 					goto skip_proc_STI;
@@ -1103,16 +1112,19 @@ loop(void)
 				if ( c == opts.escape ) {
 					/* pass the escape character down */
 					if (tty_q.len + M_MAXMAP <= TTY_Q_SZ) {
-						n = do_map((char *)tty_q.buff + tty_q.len, 
+						n = do_map((char *)tty_q.buff + tty_q.len,
 								   opts.omap, c);
 						tty_q.len += n;
-						if ( opts.lecho ) 
+						if ( opts.lecho )
 							map_and_write(STO, opts.emap, c);
 					} else {
 						fd_printf(STO, "\x07");
 					}
 				} else {
 					/* process command key */
+					if(opts.noninteractive == 1){
+						c = 's';
+					}
 					if ( do_command(c) )
 						/* picocom exit */
 						return;
@@ -1120,16 +1132,16 @@ loop(void)
 				state = ST_TRANSPARENT;
 				break;
 			case ST_TRANSPARENT:
-				if ( c == opts.escape ) {
+				if ( c == opts.escape || opts.noninteractive == 1 ) {
 					state = ST_COMMAND;
 				} else {
 					if (tty_q.len + M_MAXMAP <= TTY_Q_SZ) {
-						n = do_map((char *)tty_q.buff + tty_q.len, 
+						n = do_map((char *)tty_q.buff + tty_q.len,
 								   opts.omap, c);
 						tty_q.len += n;
-						if ( opts.lecho ) 
+						if ( opts.lecho )
 							map_and_write(STO, opts.emap, c);
-					} else 
+					} else
 						fd_printf(STO, "\x07");
 				}
 				break;
@@ -1212,7 +1224,7 @@ establish_signal_handlers (void)
 
         sigaction (SIGTERM, &exit_action, NULL);
 
-        sigaction (SIGINT, &ign_action, NULL); 
+        sigaction (SIGINT, &ign_action, NULL);
         sigaction (SIGHUP, &ign_action, NULL);
 		sigaction (SIGQUIT, &ign_action, NULL);
         sigaction (SIGALRM, &ign_action, NULL);
@@ -1252,7 +1264,7 @@ show_usage(char *name)
 #ifdef USE_CUSTOM_BAUD
 	printf("  USE_CUSTOM_BAUD is enabled\n");
 #endif
-	
+
 	printf("\nUsage is: %s [options] <tty device>\n", s);
 	printf("Options are:\n");
 	printf("  --<b>aud <baudrate>\n");
@@ -1311,6 +1323,7 @@ parse_args(int argc, char *argv[])
 		{"parity", required_argument, 0, 'y'},
 		{"databits", required_argument, 0, 'd'},
 		{"stopbits", required_argument, 0, 'p'},
+		{"noninteractive", no_argument, 0, 'n'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}
 	};
@@ -1324,13 +1337,17 @@ parse_args(int argc, char *argv[])
 		/* no default error messages printed. */
 		opterr = 0;
 
-		c = getopt_long(argc, argv, "hirlcv:s:r:e:f:b:y:d:p:",
+		c = getopt_long(argc, argv, "nhirlcv:s:r:e:f:b:y:d:p:",
 						longOptions, &optionIndex);
 
 		if (c < 0)
 			break;
 
 		switch (c) {
+		case 'n':
+			opts.noninteractive = 1;
+			printf("Opts.noninteractive set to 1\n");
+			break;
 		case 's':
 			strncpy(opts.send_cmd, optarg, sizeof(opts.send_cmd));
 			opts.send_cmd[sizeof(opts.send_cmd) - 1] = '\0';
@@ -1488,9 +1505,9 @@ parse_args(int argc, char *argv[])
 #if defined (UUCP_LOCK_DIR) || defined (USE_FLOCK)
 	printf("nolock is      : %s\n", opts.nolock ? "yes" : "no");
 #endif
-	printf("send_cmd is    : %s\n", 
+	printf("send_cmd is    : %s\n",
 		   (opts.send_cmd[0] == '\0') ? "disabled" : opts.send_cmd);
-	printf("receive_cmd is : %s\n", 
+	printf("receive_cmd is : %s\n",
 		   (opts.receive_cmd[0] == '\0') ? "disabled" : opts.receive_cmd);
 	printf("imap is        : "); print_map(opts.imap);
 	printf("omap is        : "); print_map(opts.omap);
@@ -1547,18 +1564,18 @@ main(int argc, char *argv[])
 					 !opts.noreset); /* hup-on-close. */
 	}
 	if ( r < 0 )
-		fatal("failed to add device %s: %s", 
+		fatal("failed to add device %s: %s",
 			  opts.port, term_strerror(term_errno, errno));
 	r = term_apply(tty_fd, 0);
 	if ( r < 0 )
-		fatal("failed to config device %s: %s", 
+		fatal("failed to config device %s: %s",
 			  opts.port, term_strerror(term_errno, errno));
 
 	set_tty_write_sz(term_get_baudrate(tty_fd, NULL));
-	
+
 	r = term_add(STI);
 	if ( r < 0 )
-		fatal("failed to add I/O device: %s", 
+		fatal("failed to add I/O device: %s",
 			  term_strerror(term_errno, errno));
 	term_set_raw(STI);
 	r = term_apply(STI, 0);
@@ -1574,7 +1591,7 @@ main(int argc, char *argv[])
 	fd_printf(STO, "Type [C-%c] [C-%c] to see available commands\r\n\r\n",
 			  KEYC(opts.escape), KEYC(KEY_HELP));
 #endif
-	fd_printf(STO, "Terminal ready\r\n");
+	fd_printf(STO, "Terminal ready...\r\n");
 	loop();
 
 #ifdef LINENOISE
