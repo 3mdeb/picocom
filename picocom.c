@@ -1593,7 +1593,8 @@ main(int argc, char *argv[])
 #endif
 	fd_printf(STO, "Terminal ready...\r\n");
 
-	
+    char *fname;
+	const char *xfr_cmd;
 	xfr_cmd = opts.send_cmd;
 	fname="\n";
     run_cmd(tty_fd, xfr_cmd, fname);
