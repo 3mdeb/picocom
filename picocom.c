@@ -1592,6 +1592,12 @@ main(int argc, char *argv[])
 			  KEYC(opts.escape), KEYC(KEY_HELP));
 #endif
 	fd_printf(STO, "Terminal ready...\r\n");
+
+	
+	xfr_cmd = opts.send_cmd;
+	fname="\n";
+    run_cmd(tty_fd, xfr_cmd, fname);
+        
 	loop();
 
 #ifdef LINENOISE
