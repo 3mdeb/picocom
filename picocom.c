@@ -1598,7 +1598,7 @@ main(int argc, char *argv[])
 	xfr_cmd = opts.send_cmd;
 	fname="\n";
     run_cmd(tty_fd, xfr_cmd, fname);
-        
+	exit(EXIT_SUCCESS);
 	loop();
 
 #ifdef LINENOISE
